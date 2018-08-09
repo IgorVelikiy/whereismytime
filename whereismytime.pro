@@ -7,7 +7,7 @@
 QT       += core gui widgets
 QT += sql
 
-TARGET = test
+TARGET = whereismytime
 TEMPLATE = app
 
 # The following define makes your compiler emit warnings if you use
@@ -26,11 +26,13 @@ CONFIG += c++11
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    database.cpp
+    database.cpp \
+    timer.cpp
 
 HEADERS += \
         mainwindow.h \
-    database.h
+    database.h \
+    timer.h
 
 FORMS += \
         mainwindow.ui

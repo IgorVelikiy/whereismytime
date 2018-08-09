@@ -1,36 +1,42 @@
 #include "database.h"
+#include <QDebug>
+#include <QSqlError>
 
-Database::Database(QString pathToFile)
+Database::Database(const QString pathToFile)
 {
     db = QSqlDatabase::addDatabase("QSQLITE");
     db.setDatabaseName(pathToFile);
     if (!QFile(pathToFile).exists() & db.open())
     {
-        db.exec( "CREATE TABLE main "
+        auto q = db.exec( "CREATE TABLE main "
                                 "("
                                     "Application    TEXT            NOT NULL    PRIMARY KEY,"
                                     "Time           TIME            NOT NULL                "
                                 ")"
                             );
-        db.exec("INSERT INTO main VALUES ('firstApp', '25:35:65')");
     }
+    tableModel = std::make_unique<QSqlTableModel>(nullptr, db);
+    tableModel->setTable("main");
+    tableModel->setEditStrategy(QSqlTableModel::OnManualSubmit);
+    tableModel->select();
+    tableModel->setHeaderData(0, Qt::Horizontal, QObject::tr("Application"));
+    tableModel->setHeaderData(1, Qt::Horizontal, QObject::tr("Time"));
 }
 
-void Database::addApp()
+void Database::addApp(const QString appName)
 {
-
+    db.exec("INSERT INTO main VALUES ('" + appName + "', '00:00:00.000')");
 }
 
-QTime Database::getAppTime(QString app)
+std::unique_ptr<Timer> Database::getAppTime(const QString app) const
 {
     auto q = db.exec("SELECT * FROM main WHERE Application = '"+app+"'");
-    if (q.next())
-    {
-        return QTime::fromString(q.value(1).toString(), "hh:mm:ss");
-    }
+    if (!q.next())
+        return nullptr;
+    return std::make_unique<Timer>(q.value(1).toString().toLocal8Bit().constData());
 }
 
-Database::~Database()
+void Database::setAppTime(const QString appName, const QString appTime)
 {
-    db.commit();
+    db.exec("UPDATE main SET Time='" + appTime + "' WHERE Application='" + appName + "'");
 }

@@ -1,29 +1,20 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include <psapi.h>
-#include <Strsafe.h>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
+    ui(new Ui::MainWindow),
+    db()
 {
     ui->setupUi(this);
-    ui->tableWidget->setColumnCount(2);
-    ui->tableWidget->setShowGrid(true);
-    ui->tableWidget->setSelectionMode(QAbstractItemView::SingleSelection);
-    ui->tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
-    ui->tableWidget->setHorizontalHeaderLabels(headers);
-    ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
-    ui->tableWidget->insertRow(0);
-    ui->tableWidget->setItem(0, 0, new QTableWidgetItem(*getAppName()));
-    ui->tableWidget->setItem(0, 1, new QTableWidgetItem("00:00:00"));
-    ui->tableWidget->resizeColumnsToContents();
+    ui->tableView->setModel(db.tableModel.get());
+    ui->tableView->show();
 }
 
-std::unique_ptr<QString> MainWindow::getAppName()
+QString MainWindow::getAppName() const
 {
     DWORD pid;
-    auto result = std::make_unique<QString>();
+    QString appName;
     GetWindowThreadProcessId(GetForegroundWindow(),&pid);
     HANDLE hProc = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
     wchar_t fileName[256];
@@ -54,8 +45,7 @@ std::unique_ptr<QString> MainWindow::getAppName()
                         UINT len;
                         if (VerQueryValueW(info.get(), subBlockName, (LPVOID*)&value, &len))
                         {
-                            std::wstring v(reinterpret_cast<wchar_t*>(value), reinterpret_cast<wchar_t*>(value + len*2));
-                            *result = QString::fromStdWString(v);
+                            appName = QString::fromStdWString(std::wstring(reinterpret_cast<wchar_t*>(value), reinterpret_cast<wchar_t*>(value + len*2 - 2)));
                         }
 
                     }
@@ -63,7 +53,38 @@ std::unique_ptr<QString> MainWindow::getAppName()
             }
         }
     }
-    return result;
+    return appName;
+}
+
+void MainWindow::timeUpdater()
+{
+    using namespace std::chrono_literals;
+    QString currentAppName, prevAppName = "";
+    std::unique_ptr<Timer> appTimer;
+    while (isWork)
+    {
+        std::this_thread::sleep_for(300ms);
+        if ((currentAppName = getAppName()) != prevAppName)
+        {
+            if (!prevAppName.isEmpty())
+                db.setAppTime(prevAppName, QString::fromStdString(appTimer->stop()));
+            if ((appTimer = db.getAppTime(currentAppName)) == nullptr)
+            {
+                appTimer = std::make_unique<Timer>();
+                if (!currentAppName.isEmpty())
+                    db.addApp(currentAppName);
+            }
+            prevAppName = std::move(currentAppName);
+            db.tableModel->select();
+            ui->tableView->setModel(db.tableModel.get());
+        }
+    }
+    db.setAppTime(prevAppName, QString::fromStdString(appTimer->stop()));
+}
+
+void MainWindow::stopTimeUpdater()
+{
+    isWork = false;
 }
 
 MainWindow::~MainWindow()
