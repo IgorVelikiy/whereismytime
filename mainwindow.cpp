@@ -6,8 +6,12 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow),
     db()
 {
+    this->setWindowIcon(QIcon(":/images/icon.xpm"));
     ui->setupUi(this);
     ui->tableView->setModel(db.tableModel.get());
+    ui->tableView->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+    ui->tableView->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+    ui->tableView->verticalHeader()->setVisible(false);
     ui->tableView->show();
 }
 
@@ -56,6 +60,12 @@ QString MainWindow::getAppName() const
     return appName;
 }
 
+void MainWindow::closeEvent(QCloseEvent* event)
+{
+    event->ignore();
+    this->hide();
+}
+
 void MainWindow::timeUpdater()
 {
     using namespace std::chrono_literals;
@@ -75,8 +85,6 @@ void MainWindow::timeUpdater()
                     db.addApp(currentAppName);
             }
             prevAppName = std::move(currentAppName);
-            db.tableModel->select();
-            ui->tableView->setModel(db.tableModel.get());
         }
     }
     db.setAppTime(prevAppName, QString::fromStdString(appTimer->stop()));
@@ -85,6 +93,16 @@ void MainWindow::timeUpdater()
 void MainWindow::stopTimeUpdater()
 {
     isWork = false;
+}
+
+void MainWindow::showOnDoubleClicked(QSystemTrayIcon::ActivationReason reason)
+{
+    if (reason == QSystemTrayIcon::ActivationReason::DoubleClick)
+    {
+        db.tableModel->select();
+        ui->tableView->setModel(db.tableModel.get());
+        this->show();
+    }
 }
 
 MainWindow::~MainWindow()

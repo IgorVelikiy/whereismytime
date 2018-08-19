@@ -3,9 +3,11 @@
 This is a program for tracking the time that you spend in other programs.
 
 TODO:
-- [ ] minimizing to tray
-- [ ] update table only when reminimize
+- [x] minimizing to tray
+- [x] update table only when reminimize
 - [ ] set path to database
-- [ ] full-width columns
+- [x] full-width columns
 - [ ] localization
 - [ ] optimize disk accesses?
+- [ ] draw a more beautiful icon
+- [ ] sort

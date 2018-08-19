@@ -8,6 +8,8 @@
 #include <Strsafe.h>
 #include <thread>
 #include <chrono>
+#include <QCloseEvent>
+#include <QSystemTrayIcon>
 
 namespace Ui {
 class MainWindow;
@@ -24,6 +26,9 @@ public:
     void timeUpdater();
 public slots:
     void stopTimeUpdater();
+    void showOnDoubleClicked(QSystemTrayIcon::ActivationReason reason);
+protected:
+    void closeEvent(QCloseEvent* event);
 private:
     struct Translation
     {
@@ -35,7 +40,7 @@ private:
     Database            db;
     const QStringList   headers{"Application", "Time"};
 
-    QString getAppName() const;  
+    QString getAppName() const;
 };
 
 #endif // MAINWINDOW_H

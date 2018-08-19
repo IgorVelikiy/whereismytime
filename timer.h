@@ -20,6 +20,7 @@ public:
 
     std::string toString() const;
     std::string stop();
+    void        convertToLarger();
 };
 
 #endif // TIMER_H

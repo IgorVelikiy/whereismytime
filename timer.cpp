@@ -19,6 +19,7 @@ Timer::Timer(std::string timeString)
     timeString = timeString.substr(timeString.find(':') + 1);
     seconds = stoul(timeString.substr(0, timeString.find('.')));
     milliseconds = stoul(timeString.substr(timeString.find('.') + 1));
+    convertToLarger();
 }
 
 std::string Timer::toString() const
@@ -43,5 +44,16 @@ std::string Timer::stop()
     minutes += mm.count();
     seconds += ss.count();
     milliseconds += ms.count();
+    convertToLarger();
     return this->toString();
+}
+
+void Timer::convertToLarger()
+{
+    seconds += milliseconds / 1000;
+    milliseconds %= 1000;
+    minutes += seconds / 60;
+    seconds %= 60;
+    hours += minutes / 60;
+    minutes %= 60;
 }
